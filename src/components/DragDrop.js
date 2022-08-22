@@ -10,7 +10,10 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 
 import { Resizable } from "react-resizable";
 
+import { useDropzone } from "react-dropzone";
+
 import moment from "moment";
+// import sample from "../folderFiles/sample";
 
 import "./DragDrop.css";
 
@@ -45,7 +48,14 @@ const DraggableBodyRow = ({
             ? "Folder"
             : "File"
         );
-        moveRow(item.index, index);
+
+        if ("folder" === restProps.children[index].props.record.type) {
+          console.log("폴더로 파일 이동");
+          // set
+        } else {
+          // 개체 이동 함수
+          // moveRow(item.index, index);
+        }
       },
     }),
     [index]
@@ -86,8 +96,6 @@ const ResizableTitle = (props) => {
     ...restProps
   } = props;
 
-  console.log("fixed : ", props);
-
   if (!width) {
     return <th {...restProps} />;
   }
@@ -117,11 +125,42 @@ const ResizableTitle = (props) => {
   );
 };
 
-const DragDrop = () => {
+const DragDrop = ({ files, setFiles, folderPath, setFolderPath }) => {
   const [keyword, setKeyword] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [isResizing, setIsResizing] = useState(false);
   const [isMouseOver, setIsMouseOver] = useState();
+
+  const onDrop = useCallback((acceptedFiles) => {
+    console.log("On Drop : ", acceptedFiles);
+    return;
+
+    const fs = window.require("fs");
+    const dest = `C:\\Sorizava\\Transcription_Tools\\data\\Origin_File\\`;
+
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest);
+    }
+
+    const possibleList = ["mp4", "m4a", "wav", "mp3"];
+
+    // acceptedFiles.map(async (item) => {
+    //   const format = item.name
+    //     .substring(item.name.lastIndexOf(".") + 1, item.name.length)
+    //     .toLowerCase();
+
+    //   if (possibleList.includes(format)) {
+    //     fs.copyFileSync(item.path, `${dest}${item.name}`);
+    //     const result = await convertToWav(item.name, `${dest}${item.name}`);
+
+    //     if (result) {
+    //       refreshFileList();
+    //     }
+    //   } else {
+    //     toast("지원하지 않는 파일 형식입니다.");
+    //   }
+    // });
+  }, []);
 
   useEffect(() => {
     console.log("isMouseOver : ", isMouseOver);
@@ -157,7 +196,12 @@ const DragDrop = () => {
       render: (text, record) => {
         return (
           <>
-            <span onMouseEnter={() => setIsMouseOver(record.key)}>
+            <span
+              onMouseEnter={() => setIsMouseOver(record.key)}
+              onClick={() =>
+                "folder" === record.type && setFolderPath(record.fullpath)
+              }
+            >
               {record.name}
             </span>
             <span
@@ -191,35 +235,42 @@ const DragDrop = () => {
       sorter: (a, b) => a.size.localeCompare(b.size),
     },
   ]);
-  const [data, setData] = useState([
-    {
-      key: "1",
-      type: "folder",
-      name: "Test Folder",
-      modified: moment().format("YYYY-MM-DD"),
-      size: 0,
-    },
-    {
-      key: "2",
-      type: "file",
-      name: "Tobe",
-      modified: moment().format("YYYY-MM-DD"),
-      size: 1821,
-    },
-    {
-      key: "3",
-      type: "file",
-      name: "Ssi bal",
-      modified: moment().format("YYYY-MM-DD"),
-      size: 17421,
-    },
-  ]);
+  // const [data, setData] = useState([
+  //   {
+  //     key: "1",
+  //     type: "folder",
+  //     name: "Test Folder",
+  //     modified: moment().format("YYYY-MM-DD"),
+  //     size: 0,
+  //   },
+  //   {
+  //     key: "2",
+  //     type: "file",
+  //     name: "Tobe",
+  //     modified: moment().format("YYYY-MM-DD"),
+  //     size: 1821,
+  //   },
+  //   {
+  //     key: "3",
+  //     type: "file",
+  //     name: "Ssi bal",
+  //     modified: moment().format("YYYY-MM-DD"),
+  //     size: 17421,
+  //   },
+  // ]);
 
-  useEffect(() => {
-    const list = data.filter((item) => item.name.includes(keyword));
+  // const [data, setData] = useState(sample.home.files);
 
-    setData(list);
-  }, [keyword]);
+  // useEffect(() => {
+  //   if (data) {
+  //     const list = data.filter((item) => item.name.includes(keyword));
+  //     setData(list);
+  //   }
+  // }, [keyword]);
+
+  // useEffect(() => {
+  //   console.log("data : ", data);
+  // }, [data]);
 
   useEffect(() => {
     console.log("isResizing : ", isResizing);
@@ -227,11 +278,22 @@ const DragDrop = () => {
 
   const moveRow = useCallback(
     (dragIndex, hoverIndex) => {
-      const selectedData = data[dragIndex];
-      const moveData = data[hoverIndex];
+      const selectedData = files[dragIndex];
+      const moveData = files[hoverIndex];
 
-      setData(
-        update(data, {
+      // setData(
+      //   update(data, {
+      //     $splice: [
+      //       [dragIndex, 1],
+      //       [dragIndex, 0, moveData],
+      //       [hoverIndex, 1],
+      //       [hoverIndex, 0, selectedData],
+      //     ],
+      //   })
+      // );
+
+      setFiles(
+        update(files, {
           $splice: [
             [dragIndex, 1],
             [dragIndex, 0, moveData],
@@ -241,7 +303,7 @@ const DragDrop = () => {
         })
       );
     },
-    [data]
+    [files]
   );
 
   const handleResize =
@@ -295,6 +357,11 @@ const DragDrop = () => {
     ignoreSelector: "react-resizable-handle",
   };
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    noClick: true,
+  });
+
   return (
     <>
       <div className="keyword">
@@ -304,50 +371,50 @@ const DragDrop = () => {
           onChange={(e) => setKeyword(e.target.value)}
         />
       </div>
-      <div className="container mt-5">
-        <DndProvider backend={HTML5Backend}>
-          <ReactDragListView.DragColumn {...dragProps}>
-            <Table
-              showSorterTooltip={false}
-              rowSelection={{
-                type: "checkbox",
-                selectedRowKeys: selectedRows,
-                onChange: (selectedRowKeys, selectedRows) => {
-                  setSelectedRows(selectedRowKeys);
+      <div className="container mt-5" {...getRootProps()}>
+        {/* <DndProvider backend={HTML5Backend}> */}
+        <ReactDragListView.DragColumn {...dragProps}>
+          <Table
+            showSorterTooltip={false}
+            rowSelection={{
+              type: "checkbox",
+              selectedRowKeys: selectedRows,
+              onChange: (selectedRowKeys, selectedRows) => {
+                setSelectedRows(selectedRowKeys);
+              },
+
+              getCheckboxProps: (record) => ({
+                disabled: record.name === "Disabled User",
+                // Column configuration not to be checked
+                name: record.name,
+              }),
+            }}
+            bordered
+            pagination={false}
+            columns={mergeColumns}
+            dataSource={files}
+            components={components}
+            onRow={(record, index) => {
+              return {
+                onClick: (e) => {
+                  setSelectedRows([String(index + 1)]);
                 },
 
-                getCheckboxProps: (record) => ({
-                  disabled: record.name === "Disabled User",
-                  // Column configuration not to be checked
-                  name: record.name,
-                }),
-              }}
-              bordered
-              pagination={false}
-              columns={mergeColumns}
-              dataSource={data}
-              components={components}
-              onRow={(record, index) => {
-                return {
-                  onClick: (e) => {
-                    setSelectedRows([String(index + 1)]);
-                  },
-
-                  index,
-                  moveRow,
-                };
-              }}
-              onHeaderRow={(columns, index) => {
-                return {
-                  onContextMenu: (e) => {
-                    setIsResizing(false);
-                    console.log("된다!!!!!");
-                  },
-                };
-              }}
-            />
-          </ReactDragListView.DragColumn>
-        </DndProvider>
+                index,
+                moveRow,
+              };
+            }}
+            onHeaderRow={(columns, index) => {
+              return {
+                onContextMenu: (e) => {
+                  setIsResizing(false);
+                  console.log("된다!!!!!");
+                },
+              };
+            }}
+          />
+        </ReactDragListView.DragColumn>
+        {/* </DndProvider> */}
       </div>
     </>
   );
