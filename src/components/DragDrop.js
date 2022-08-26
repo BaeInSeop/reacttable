@@ -7,6 +7,7 @@ import update from "immutability-helper";
 
 import { FcFolder, FcFile } from "react-icons/fc";
 import { BsThreeDotsVertical } from "react-icons/bs";
+import { GrDocumentPdf } from "react-icons/gr";
 
 import { Resizable } from "react-resizable";
 
@@ -22,7 +23,9 @@ const DraggableBodyRow = ({
   moveRow,
   className,
   style,
-
+  sample,
+  setSample,
+  folderPath,
   ...restProps
 }) => {
   // console.log("DraggableBodyRow - restProps : ", restProps);
@@ -50,11 +53,21 @@ const DraggableBodyRow = ({
         );
 
         if ("folder" === restProps.children[index].props.record.type) {
-          console.log("폴더로 파일 이동");
-          // set
+          let movedFile = sample[folderPath].files[item.index];
+
+          movedFile.fullpath = `home/bis/${movedFile.name}`;
+
+          let tempSample = { ...sample };
+
+          tempSample["bis"].files[item.index] = movedFile;
+          tempSample["home"].files.splice(item.index, 1);
+
+          console.log("tempSample : ", tempSample);
+
+          setSample(tempSample);
         } else {
-          // 개체 이동 함수
-          // moveRow(item.index, index);
+          //개체 이동 함수
+          moveRow(item.index, index);
         }
       },
     }),
@@ -125,7 +138,14 @@ const ResizableTitle = (props) => {
   );
 };
 
-const DragDrop = ({ files, setFiles, folderPath, setFolderPath }) => {
+const DragDrop = ({
+  files,
+  setFiles,
+  folderPath,
+  setFolderPath,
+  sample,
+  setSample,
+}) => {
   const [keyword, setKeyword] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [isResizing, setIsResizing] = useState(false);
@@ -133,38 +153,40 @@ const DragDrop = ({ files, setFiles, folderPath, setFolderPath }) => {
 
   const onDrop = useCallback((acceptedFiles) => {
     console.log("On Drop : ", acceptedFiles);
+
+    const fileInfo = {
+      key: String(files.length + 1),
+      type: acceptedFiles[0].name.substring(
+        acceptedFiles[0].name.lastIndexOf(".") + 1,
+        acceptedFiles[0].name.length
+      ),
+      name: acceptedFiles[0].name,
+      modified: "2022-08-26",
+      size: String(acceptedFiles[0].size),
+      fullpath: `${folderPath}/${acceptedFiles[0].name}`,
+    };
+
+    setSample((prev) => ({
+      ...prev,
+      [folderPath]: {
+        ...prev[folderPath],
+        files: [...prev[folderPath].files, fileInfo],
+      },
+    }));
     return;
-
-    const fs = window.require("fs");
-    const dest = `C:\\Sorizava\\Transcription_Tools\\data\\Origin_File\\`;
-
-    if (!fs.existsSync(dest)) {
-      fs.mkdirSync(dest);
-    }
-
-    const possibleList = ["mp4", "m4a", "wav", "mp3"];
-
-    // acceptedFiles.map(async (item) => {
-    //   const format = item.name
-    //     .substring(item.name.lastIndexOf(".") + 1, item.name.length)
-    //     .toLowerCase();
-
-    //   if (possibleList.includes(format)) {
-    //     fs.copyFileSync(item.path, `${dest}${item.name}`);
-    //     const result = await convertToWav(item.name, `${dest}${item.name}`);
-
-    //     if (result) {
-    //       refreshFileList();
-    //     }
-    //   } else {
-    //     toast("지원하지 않는 파일 형식입니다.");
-    //   }
-    // });
   }, []);
 
   useEffect(() => {
-    console.log("isMouseOver : ", isMouseOver);
-  }, [isMouseOver]);
+    console.log("files : ", files);
+  }, [files]);
+
+  useEffect(() => {
+    if (0 < keyword.length) {
+      setFiles((prev) => prev.filter((item) => item.name.includes(keyword)));
+    } else {
+      setFiles("home" === folderPath ? sample.home.files : sample.bis.files);
+    }
+  }, [keyword]);
 
   const [columns, setColumns] = useState([
     {
@@ -180,6 +202,9 @@ const DragDrop = ({ files, setFiles, folderPath, setFolderPath }) => {
 
           case "file":
             return <FcFile />;
+
+          case "pdf":
+            return <GrDocumentPdf />;
 
           default:
             return;
@@ -402,6 +427,9 @@ const DragDrop = ({ files, setFiles, folderPath, setFolderPath }) => {
 
                 index,
                 moveRow,
+                sample,
+                setSample,
+                folderPath,
               };
             }}
             onHeaderRow={(columns, index) => {

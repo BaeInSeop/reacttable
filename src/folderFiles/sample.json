@@ -1,6 +1,6 @@
 {
   "home": {
-    "folderPath": "home/",
+    "folderPath": "home",
     "files": [
       {
         "key": "1",
@@ -17,6 +17,14 @@
         "modified": "2022-02-06",
         "size": "0",
         "fullpath": "home/home_file_test"
+      },
+      {
+        "key": "3",
+        "type": "file",
+        "name": "home_file_test2",
+        "modified": "2022-02-06",
+        "size": "0",
+        "fullpath": "home/home_file_test2"
       }
     ]
   },
@@ -24,7 +32,7 @@
     "folderPath": "home/bis",
     "files": [
       {
-        "key": "3",
+        "key": "4",
         "type": "file",
         "name": "bis_test_file",
         "modified": "2022-08-16",
@@ -32,7 +40,7 @@
         "fullpath": "home/bis/bis_test_file"
       },
       {
-        "key": "4",
+        "key": "5",
         "type": "file",
         "name": "bis_test_file2",
         "modified": "2022-07-11",
